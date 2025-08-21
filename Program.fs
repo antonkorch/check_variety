@@ -7,6 +7,8 @@ open System.IO
 // Register support for legacy encodings like CP1251
 Encoding.RegisterProvider(CodePagesEncodingProvider.Instance)
 
+let httpClient = new HttpClient()
+
 let checkEncoding (path: string) =
     let bytes = File.ReadAllBytes(path)
 
@@ -22,7 +24,6 @@ let checkEncoding (path: string) =
 let postFormAsync (selection: string) (variety: string) =
     task {
         let url = "https://gossortrf.ru/registry/ajaxhandler.php"
-        use client = new HttpClient()
 
         // Form data as key-value pairs
         let formData = Dictionary<string, string>()
@@ -33,7 +34,7 @@ let postFormAsync (selection: string) (variety: string) =
 
         let content = new FormUrlEncodedContent(formData)
 
-        let! response = client.PostAsync(url, content)
+        let! response = httpClient.PostAsync(url, content)
         response.EnsureSuccessStatusCode() |> ignore
 
         let! responseBody = response.Content.ReadAsStringAsync()
@@ -53,14 +54,16 @@ let main argv =
 
     File.WriteAllText("result.txt", "")
 
-    for line in lines |> Array.skip 1 do
-        let columns = line.Split([| ','; ';' |], StringSplitOptions.RemoveEmptyEntries)
-        if columns.Length >= 2 then
-            let selection = columns.[0].Trim()
-            let variety = columns.[1].Trim()
-            let task = postFormAsync selection variety
-            let resultStr = sprintf "Проверка: %s сорта %s. Результат: %s\n" selection variety task.Result
-            printf "%s" resultStr
-            File.AppendAllText("result.txt", resultStr)
-
+    let work = task {
+        for line in lines |> Array.skip 1 do
+            let columns = line.Split([| ','; ';' |], StringSplitOptions.RemoveEmptyEntries)
+            if columns.Length >= 2 then
+                let selection = columns.[0].Trim()
+                let variety = columns.[1].Trim()
+                let! result = postFormAsync selection variety
+                let resultStr = sprintf "Проверка: %s сорта %s. Результат: %s\n" selection variety result
+                printf "%s" resultStr
+                File.AppendAllText("result.txt", resultStr)
+    }
+    work.GetAwaiter().GetResult()
     0
