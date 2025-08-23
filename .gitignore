@@ -45,3 +45,5 @@ TestResults/
 # !*.fs
 # !*.fsproj
 # !*.sln
+
+.fake

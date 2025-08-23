@@ -21,6 +21,19 @@ let checkEncoding (path: string) =
     else
         Encoding.GetEncoding(1251)
 
+let correctSelection (selection: string) =
+    let matchList = ["гортензия"; "тест"]
+    
+    match selection with
+    | matchWord when List.exists (fun (word: string) -> 
+        matchWord.StartsWith(word, StringComparison.OrdinalIgnoreCase)
+        ) matchList ->
+            let parts = selection.Split([|' '|], StringSplitOptions.RemoveEmptyEntries)
+            if parts.Length > 0 then parts.[0] else selection
+    | _ -> 
+        selection
+
+
 let postFormAsync (selection: string) (variety: string) =
     task {
         let url = "https://gossortrf.ru/registry/ajaxhandler.php"
@@ -58,7 +71,7 @@ let main argv =
         for line in lines |> Array.skip 1 do
             let columns = line.Split([| ','; ';' |], StringSplitOptions.RemoveEmptyEntries)
             if columns.Length >= 2 then
-                let selection = columns.[0].Trim()
+                let selection = correctSelection (columns.[0].Trim())
                 let variety = columns.[1].Trim()
                 let! result = postFormAsync selection variety
                 let resultStr = sprintf "Проверка: %s сорта %s. Результат: %s\n" selection variety result
