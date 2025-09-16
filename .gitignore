@@ -47,3 +47,4 @@ TestResults/
 # !*.sln
 
 .fake
+input_total.csv

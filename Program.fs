@@ -22,7 +22,11 @@ let checkEncoding (path: string) =
         Encoding.GetEncoding(1251)
 
 let correctSelection (selection: string) =
-    let matchList = ["гортензия"; "тест"]
+    let matchList = [
+        "актинидия"; "береза"; "вейгела"; "гортензия"; "жимолость";
+        "крыжовник"; "лапчатка"; "малина"; "сирень"; "рододендрон"; 
+        "хризантема"; "чубушник"; "яблоня";
+        ]
     
     match selection with
     | matchWord when List.exists (fun (word: string) -> 
@@ -33,6 +37,9 @@ let correctSelection (selection: string) =
     | _ -> 
         selection
 
+let correctVariety (variety: string) =
+    let parts = variety.Split([|'/'|], StringSplitOptions.RemoveEmptyEntries)
+    if parts.Length > 1 then parts.[1].Trim() else variety
 
 let postFormAsync (selection: string) (variety: string) =
     task {
@@ -72,7 +79,7 @@ let main argv =
             let columns = line.Split([| ','; ';' |], StringSplitOptions.RemoveEmptyEntries)
             if columns.Length >= 2 then
                 let selection = correctSelection (columns.[0].Trim())
-                let variety = columns.[1].Trim()
+                let variety = correctVariety (columns.[1].Trim())
                 let! result = postFormAsync selection variety
                 let resultStr = sprintf "Проверка: %s сорта %s. Результат: %s\n" selection variety result
                 printf "%s" resultStr
